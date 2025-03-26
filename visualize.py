@@ -31,7 +31,7 @@ def draw_object_detection(rgb:np.ndarray, box:np.ndarray, label, color=(0,255,0)
     x0, y0 = box[0], box[1]
     x1, y1 = box[2], box[3]
     cv2.rectangle(rgb, (x0, y0), (x1, y1), color, thickness)
-    cv2.putText(rgb, label, (x0+5, y0 +16), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
+    cv2.putText(rgb, label, (x0+5, y0+26), cv2.FONT_HERSHEY_SIMPLEX, 1.2, color, 2)
     
     return rgb
 
@@ -107,37 +107,45 @@ def load_pred(label_file,valid_openset_names=None):
             return torch.zeros((1,2,2)), [], ''
             return None,None,None
 
-
 if __name__=='__main__':
+    ################ SET CONFIGURATION ################
     # dataroot = '/data2/3rscan_raw'
+    # dataroot = '/data2/slabim'
     dataroot = '/data2/ScanNet'
     output_folder  = os.path.join(dataroot,'viz')
     scans_folder = os.path.join(dataroot,'val')
+    rgb_folder = 'color'
+    rgb_posfix = '.jpg'    
+    frame_gap = 10
+    split_file = 'tmp.txt'
+    prediction_folder = 'prediction_no_augment'
+    visualize_mask = True
+    
+    ###################################################
+    
     if '3rscan' in dataroot:
         rgb_folder = 'sequence' # color
         rgb_posfix = '.color.jpg'  #'.jpg'
         scans_folder = dataroot
+    elif 'ScanNet' in dataroot:
+        rgb_folder = 'color'
+        rgb_posfix = '.jpg'
     elif 'sgslam' in dataroot:
         rgb_folder = 'rgb'
         rgb_posfix = '.png'
     elif 'bim' in dataroot:
-        rgb_folder = 'color'
-        rgb_posfix = '.jpg'
-        scans_folder = os.path.join(dataroot, 'test')
+        scans_folder = os.path.join(dataroot, 'scans')
     else:
-        rgb_folder = 'color'
-        rgb_posfix = '.jpg'
-    frame_gap = 10
+        raise NotImplementedError('Unrecognized dataset in {}'.format(dataroot))
+
     sample_frame_number = 100000
-    split_file = 'tmp.txt'
-    visualize_mask = False
     
-    ### original prediction are based on rotated rgb ###
-    prediction_folder = 'prediction_no_augment'
+    ### if original prediction are based on rotated rgb ###
     rotated = False
     
     scans = read_scan_list(os.path.join(dataroot, 'splits', split_file))
-    scans = ['scene0064_00']
+    # scans = ['xb0101_00']
+    scans = ['scene0025_00']
     
     pred_folders = [os.path.join(scans_folder, scan, prediction_folder) for scan in scans]
     # pred_folders = glob.glob(os.path.join(scans_folder, '*', prediction_folder))
@@ -152,7 +160,6 @@ if __name__=='__main__':
         if os.path.exists(all_viz_folder)==False:
             os.makedirs(all_viz_folder)
 
-        # if os.path.exists(scene_viz_folder): continue
         if 'lg' in scene: continue
         print('--------- processing {}----------'.format(scene))
 
@@ -162,10 +169,13 @@ if __name__=='__main__':
         else:
             sample_pred_files = np.random.choice(pred_files, sample_frame_number, replace=False)
         count = 0
+        prev_frame_id = -100
         for frame_pred in sorted(sample_pred_files):
             print(frame_pred)
             frame_name = frame_pred.split('/')[-1][:12]
             frame_id = int(frame_name[6:])
+            if frame_id-prev_frame_id<frame_gap:
+                continue
             if count % 50==0:
                 print('{} / {}'.format(frame_name, len(sample_pred_files)))
                 
@@ -175,9 +185,9 @@ if __name__=='__main__':
             if rotated:
                 rgb = cv2.rotate(rgb, cv2.ROTATE_90_CLOCKWISE)            
                 
-            if True:
+            if False:
                 # print(frame_name)
-                rgb = cv2.cvtColor(rgb, cv2.COLOR_BGR2RGB)
+                # rgb = cv2.cvtColor(rgb, cv2.COLOR_BGR2RGB)
                 if os.path.exists(scene_viz_folder) == False:
                     os.makedirs(scene_viz_folder)
 
@@ -210,11 +220,12 @@ if __name__=='__main__':
                     for i in range(1, mask.max()+1):
                         mask_i = (mask==i).astype(np.uint8)
                         show_mask(mask_i, plt.gca(), random_color=True)
-                
+                    print('plot mask')
                 plt.title(tags)
-                plt.savefig(os.path.join(all_viz_folder, frame_name+'.jpg'))
+                plt.savefig(os.path.join(scene_viz_folder, frame_name+'.jpg'))
                 count +=1
-            # break
-        # break
+
+            prev_frame_id = frame_id
+            break
         print('{} saved {} frames'.format(scene, count))
-        # break
+        break

@@ -531,7 +531,7 @@ if __name__ == "__main__":
     parser.add_argument("--text_threshold", type=float, default=0.25, help="text threshold")
     parser.add_argument("--iou_threshold", type=float, default=0.3, help="iou threshold")
 
-    parser.add_argument("--device", type=str, default="cpu", help="running on cpu only!, default=False")
+    parser.add_argument("--device", type=str, default="cuda", help="running on cpu only!, default=False")
     parser.add_argument("--data_format",type=str, default='scannet', help="data format")
     parser.add_argument("--save_viz",action='store_true', help="save visualization")
     parser.add_argument("--categories",type=str, default='categories_new.json', help="categories file")

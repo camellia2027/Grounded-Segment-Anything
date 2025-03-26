@@ -12,7 +12,8 @@ To run RAM-Grounded-SAM for a list of RGB sequences,
 ```bash
 python run_ram_ground_sam.py --ram_checkpoint ${RAM_PTH} --grounded_checkpoint ${GROUND_DINO_PTH} --dataroot ${DATA_ROOT_DIR} --split_file val.txt
 ```
-Please set the ```PARAMETERS``` accordingly before run the command above.
+Please set the ```CHECKPOINT_PTH``` accordingly before run the command above. It should run RAM and GroundingDINO. The generated bounding boxes and their labels are saved. To further run SAM, please add the arguments ```--run_sam --sam_checkpoint ${SAM_CHECKPOINT}``` in running ```run_ram_ground_sam.py```. 
+If you run more than a dozen of sequences, we suggest you only run RAM and GroundingDINO. Then, run [EfficientSAM](https://github.com/yformer/EfficientSAM) serperately and run it at a ```batch size>1```. It runs faster than the SAM in ```run_ram_ground_sam.py```.
 
 ```run_ram_ground_sam.py``` read the RGB sequence following our dataset structure. The organized data structure is explained [here](https://github.com/HKUST-Aerial-Robotics/FM-Fusion/blob/master/doc/DATA.md).
 
