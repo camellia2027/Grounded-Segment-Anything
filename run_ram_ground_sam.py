@@ -78,6 +78,7 @@ def check_tags_chinese(tags_chinese, pred_phrases, max_tokens=100, model="gpt-3.
 def load_model(model_config_path, model_checkpoint_path, device):
     args = SLConfig.fromfile(model_config_path)
     args.device = device
+    args.bert_base_uncased_path = None  # Use default path
     model = build_model(args)
     checkpoint = torch.load(model_checkpoint_path, map_location="cpu")
     load_res = model.load_state_dict(clean_state_dict(checkpoint["model"]), strict=False)
