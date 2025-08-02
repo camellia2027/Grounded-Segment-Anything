@@ -17,6 +17,152 @@ If you run more than a dozen of sequences, we suggest you only run RAM and Groun
 
 ```run_ram_ground_sam.py``` read the RGB sequence following our dataset structure. The organized data structure is explained [here](https://github.com/HKUST-Aerial-Robotics/FM-Fusion/blob/master/doc/DATA.md).
 
+
+# Grounded-SAM 对 ScanNet 数据集的支持
+
+此分支增加了对 ScanNet 数据集的支持，结合 Grounded-SAM 实现场景的自动标注。
+
+## 功能特点
+
+- **批量处理**：自动处理完整的 ScanNet 场景
+- **ScanNet 集成**：直接支持 ScanNet 数据格式
+- **自动标注**：生成室内场景的标签和掩码
+- **可视化**：生成带有边界框和标签的可视化图像
+
+## 快速开始
+
+### 1. 环境搭建
+
+```bash
+# 安装依赖
+pip install -r requirements.txt
+
+# 安装 GroundingDINO
+cd GroundingDINO
+pip install -e .
+cd ..
+```
+
+### 2. 下载模型
+
+下载所需模型权重：
+- GroundingDINO 模型：`groundingdino_swint_ogc.pth`
+- SAM 模型：`sam_vit_b.pth`（或 `sam_vit_h_4b8939.pth`）
+- RAM 模型：`ram_swin_large_14m.pth`
+
+将它们放置在 `models/` 目录下。
+
+### 3. 准备 ScanNet 数据
+
+按照如下结构整理您的 ScanNet 数据：
+```
+scans/
+└── scene0025_00/
+    └── color/
+        ├── frame-000000.jpg
+        ├── frame-000005.jpg
+        └── ...
+```
+
+### 4. 运行自动标注
+
+```bash
+# 处理单个场景
+bash run_test.sh
+
+# 或者直接使用 Python 运行
+python run_ram_ground_sam.py \
+    --config GroundingDINO/groundingdino/config/GroundingDINO_SwinT_OGC.py \
+    --grounded_checkpoint models/groundingdino_swint_ogc.pth \
+    --sam_checkpoint models/sam_vit_b.pth \
+    --ram_checkpoint models/ram_swin_large_14m.pth \
+    --input_image scans_sample/scene0025_00/color/frame-000000.jpg \
+    --output_dir outputs \
+    --box_threshold 0.25 \
+    --text_threshold 0.2 \
+    --iou_threshold 0.5 \
+    --device cuda
+```
+
+## 输出格式
+
+脚本为每张处理的图片生成三种输出：
+
+1. **标签文件**（`*_label.json`）：包含检测结果的边界框、标签和置信度分数
+2. **掩码文件**（`*_mask.png`）：检测目标的分割掩码
+3. **可视化文件**（`*_det.jpg`）：带边界框和标签的图像
+
+### 标签文件格式
+
+```json
+{
+    "labels": ["chair", "table", "computer monitor"],
+    "boxes": [[x1, y1, x2, y2], ...],
+    "scores": [0.95, 0.87, 0.92],
+    "raw_labels": ["chair . table . computer monitor"],
+    "filtered_labels": ["chair", "table", "computer monitor"]
+}
+```
+
+## 配置说明
+
+### 场景选择
+
+编辑 `splits/val.txt` 以指定要处理的场景：
+```
+scene0025_00
+scene0030_00
+scene0050_00
+```
+
+### 物体类别
+
+系统采用了定义在 `categories_new.json` 中的全面室内物体类别，包括：
+- 家具：椅子、桌子、沙发、床等
+- 电子产品：电脑、显示器、电视等
+- 家用电器：冰箱、微波炉等
+- 结构元素：墙壁、地板、天花板、门、窗户
+
+### 模型配置
+
+- **GroundingDINO**：基于文本引导的目标检测
+- **SAM**：Segment Anything Model，精准分割
+- **RAM**：Recognize Anything Model，全面标签识别
+
+## 性能表现
+
+典型每张图片处理时间：
+- RAM：约 221 毫秒
+- GroundingDINO：约 432 毫秒
+- SAM：约 1987 毫秒
+- **总计**：约 2.6 秒每张图像
+
+## 示例结果
+
+系统可检测和分割多种室内物体，包括：
+- 办公家具（桌子、椅子、显示器）
+- 家用电器（冰箱、微波炉）
+- 结构元素（墙壁、地板、门）
+- 电子设备及配件
+
+## 故障排查
+
+### 常见问题
+
+1. **CUDA 内存错误**：减少批量大小或使用较小的 SAM 模型
+2. **模型加载错误**：检查模型文件路径及权限
+3. **检测为空**：调整 `box_threshold` 和 `text_threshold` 参数
+
+### 模型兼容性
+
+- 支持 SAM ViT-B 和 ViT-H 模型
+- 兼容 GroundingDINO SwinT-OGC 配置
+- 需具备支持 CUDA 的 GPU 以获得最佳性能
+
+
+————————————————————————————————————————————————————————————
+
+
 # Grounded-Segment-Anything
 [![YouTube](https://badges.aleen42.com/src/youtube.svg)](https://youtu.be/oEQYStnF2l8) [![Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/roboflow-ai/notebooks/blob/main/notebooks/automated-dataset-annotation-and-evaluation-with-grounding-dino-and-sam.ipynb) [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://github.com/camenduru/grounded-segment-anything-colab) [![HuggingFace Space](https://img.shields.io/badge/🤗-HuggingFace%20Space-cyan.svg)](https://huggingface.co/spaces/IDEA-Research/Grounded-SAM) [![Replicate](https://replicate.com/cjwbw/grounded-recognize-anything/badge)](https://replicate.com/cjwbw/grounded-recognize-anything)  [![ModelScope Official Demo](https://img.shields.io/badge/ModelScope-Official%20Demo-important)](https://modelscope.cn/studios/tuofeilunhifi/Grounded-Segment-Anything/summary) [![Huggingface Demo by Community](https://img.shields.io/badge/Huggingface-Demo%20by%20Community-red)](https://huggingface.co/spaces/yizhangliu/Grounded-Segment-Anything) [![Stable-Diffusion WebUI](https://img.shields.io/badge/Stable--Diffusion-WebUI%20by%20Community-critical)](https://github.com/continue-revolution/sd-webui-segment-anything) [![Jupyter Notebook Demo](https://img.shields.io/badge/Demo-Jupyter%20Notebook-informational)](./grounded_sam.ipynb) [![Static Badge](https://img.shields.io/badge/GroundingDINO-arXiv-blue)](https://arxiv.org/abs/2303.05499) [![Static Badge](https://img.shields.io/badge/Segment_Anything-arXiv-blue)](https://arxiv.org/abs/2304.02643) [![Static Badge](https://img.shields.io/badge/Grounded_SAM-arXiv-blue)](https://arxiv.org/abs/2401.14159)
 

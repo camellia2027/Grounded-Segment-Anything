@@ -8,6 +8,18 @@
 source ~/anaconda3/etc/profile.d/conda.sh
 conda activate grounded-sam
 
+# 清除所有代理设置以避免 litellm 冲突
+unset http_proxy
+unset https_proxy
+unset ftp_proxy
+unset HTTP_PROXY
+unset HTTPS_PROXY
+unset FTP_PROXY
+unset ALL_PROXY
+unset all_proxy
+unset no_proxy
+unset NO_PROXY
+
 # 设置代理
 export http_proxy=http://127.0.0.1:10808
 export https_proxy=http://127.0.0.1:10808
@@ -16,7 +28,7 @@ python run_ram_ground_sam.py \
     --config GroundingDINO/groundingdino/config/GroundingDINO_SwinT_OGC.py \
     --ram_checkpoint models/ram_swin_large_14m.pth \
     --grounded_checkpoint models/groundingdino_swint_ogc.pth \
-    --sam_checkpoint models/sam_vit_b.pth \
+    --sam_checkpoint models/sam_vit_h_4b8939.pth \
     --run_sam \
     --dataroot . \
     --split_file val.txt \
